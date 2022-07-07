@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -112,7 +113,7 @@ class IndexBarOptions {
   const IndexBarOptions({
     this.needRebuild = false,
     this.ignoreDragCancel = false,
-    this.hapticFeedback = false,
+    this.hapticFeedback,
     this.color,
     this.downColor,
     this.decoration,
@@ -145,7 +146,7 @@ class IndexBarOptions {
   final bool ignoreDragCancel;
 
   /// Haptic feedback.
-  final bool hapticFeedback;
+  final Future<void> Function()? hapticFeedback;
 
   /// IndexBar background color.
   final Color? color;
@@ -280,7 +281,7 @@ class _IndexBarState extends State<IndexBar> {
   @override
   void initState() {
     super.initState();
-    widget.indexBarDragNotifier?.dragDetails?.addListener(_valueChanged);
+    widget.indexBarDragNotifier?.dragDetails.addListener(_valueChanged);
     widget.controller?._attach(this);
   }
 
@@ -319,7 +320,7 @@ class _IndexBarState extends State<IndexBar> {
   void dispose() {
     widget.controller?._detach();
     _removeOverlay();
-    widget.indexBarDragNotifier?.dragDetails?.removeListener(_valueChanged);
+    widget.indexBarDragNotifier?.dragDetails.removeListener(_valueChanged);
     super.dispose();
   }
 
@@ -481,7 +482,7 @@ class BaseIndexBar extends StatefulWidget {
     this.data = kIndexBarData,
     this.width = kIndexBarWidth,
     this.itemHeight = kIndexBarItemHeight,
-    this.hapticFeedback = false,
+    this.hapticFeedback,
     this.textStyle = const TextStyle(fontSize: 12.0, color: Color(0xFF666666)),
     this.itemBuilder,
     this.indexBarDragNotifier,
@@ -497,7 +498,7 @@ class BaseIndexBar extends StatefulWidget {
   final double itemHeight;
 
   /// Haptic feedback.
-  final bool hapticFeedback;
+  final Future<void> Function()? hapticFeedback;
 
   /// IndexBar text style.
   final TextStyle textStyle;
@@ -522,12 +523,13 @@ class _BaseIndexBarState extends State<BaseIndexBar> {
 
   /// trigger drag event.
   _triggerDragEvent(int action) {
-    if (widget.hapticFeedback &&
+    if (widget.hapticFeedback != null &&
         (action == IndexBarDragDetails.actionDown ||
             action == IndexBarDragDetails.actionUpdate)) {
-      HapticFeedback.vibrate();
+      // HapticFeedback.vibrate();
+      widget.hapticFeedback!();
     }
-    widget.indexBarDragNotifier?.dragDetails?.value = IndexBarDragDetails(
+    widget.indexBarDragNotifier?.dragDetails.value = IndexBarDragDetails(
       action: action,
       index: lastIndex,
       tag: widget.data[lastIndex],
