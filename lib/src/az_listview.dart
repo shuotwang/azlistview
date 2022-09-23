@@ -144,9 +144,23 @@ class _AzListViewState extends State<AzListView> {
 
   void _scrollTopIndex(String tag) {
     int index = _getIndex(tag);
+
     if (index != -1) {
       itemScrollController.jumpTo(index: index);
     }
+
+    // int index = _getIndex(tag);
+    // double alignment;
+    // if (index != -1) {
+    //   int maxIndex = widget.data.length;
+    //   int minDistance = maxIndex - index;
+    //   if (minDistance <= 10) {
+    //     alignment = 1;
+    //     itemScrollController.jumpTo(index: maxIndex, alignment: 1.0);
+    //   } else {
+    //     itemScrollController.jumpTo(index: index);
+    //   }
+    // }
   }
 
   void _valueChanged() {

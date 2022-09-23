@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
@@ -549,53 +550,75 @@ class _BaseIndexBarState extends State<BaseIndexBar> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> children = List.generate(widget.data.length, (index) {
-      Widget child = widget.itemBuilder == null
-          ? Center(
-              child: Text('${widget.data[index]}', style: widget.textStyle))
-          : widget.itemBuilder!(context, index);
-      return SizedBox(
-        width: widget.width,
-        height: widget.itemHeight,
-        child: child,
-      );
-    });
-
     return GestureDetector(
-      onVerticalDragDown: (DragDownDetails details) {
-        RenderBox? box = _getRenderBox(context);
-        if (box == null) return;
-        Offset topLeftPosition = box.localToGlobal(Offset.zero);
-        _widgetTop = topLeftPosition.dy.toInt();
-        int index = _getIndex(details.localPosition.dy);
-        if (index >= 0) {
-          lastIndex = index;
-          _triggerDragEvent(IndexBarDragDetails.actionDown);
+        onVerticalDragDown: (DragDownDetails details) {
+          RenderBox? box = _getRenderBox(context);
+          if (box == null) return;
+          Offset topLeftPosition = box.localToGlobal(Offset.zero);
+          _widgetTop = topLeftPosition.dy.toInt();
+          int index = _getIndex(details.localPosition.dy);
+          if (index >= 0) {
+            lastIndex = index;
+            _triggerDragEvent(IndexBarDragDetails.actionDown);
+          }
+        },
+        onVerticalDragUpdate: (DragUpdateDetails details) {
+          int index = _getIndex(details.localPosition.dy);
+          if (index >= 0 && lastIndex != index) {
+            lastIndex = index;
+            //HapticFeedback.lightImpact();
+            //HapticFeedback.vibrate();
+            _triggerDragEvent(IndexBarDragDetails.actionUpdate);
+          }
+        },
+        onVerticalDragEnd: (DragEndDetails details) {
+          _triggerDragEvent(IndexBarDragDetails.actionEnd);
+        },
+        onVerticalDragCancel: () {
+          _triggerDragEvent(IndexBarDragDetails.actionCancel);
+        },
+        onTapUp: (TapUpDetails details) {
+          //_triggerDragEvent(IndexBarDragDetails.actionUp);
+        },
+        behavior: HitTestBehavior.translucent,
+        child: buildIndexBar(widget.data));
+  }
+
+  Widget buildIndexBar(List<String> data) {
+    return LayoutBuilder(builder: (context, constraints) {
+      double potentialHeight = data.length * 16;
+
+      final dividers = [7, 5, 3, 2];
+      int factor = 0;
+      while (potentialHeight > constraints.maxHeight) {
+        for (int i = 0; i < data.length; i++) {
+          if (i == 0 || i == data.length - 1) continue;
+          if (i % dividers[factor] == 0) {
+            data.removeAt(i);
+          }
+
+          if (factor < dividers.length - 1) {
+            factor += 1;
+          }
         }
-      },
-      onVerticalDragUpdate: (DragUpdateDetails details) {
-        int index = _getIndex(details.localPosition.dy);
-        if (index >= 0 && lastIndex != index) {
-          lastIndex = index;
-          //HapticFeedback.lightImpact();
-          //HapticFeedback.vibrate();
-          _triggerDragEvent(IndexBarDragDetails.actionUpdate);
-        }
-      },
-      onVerticalDragEnd: (DragEndDetails details) {
-        _triggerDragEvent(IndexBarDragDetails.actionEnd);
-      },
-      onVerticalDragCancel: () {
-        _triggerDragEvent(IndexBarDragDetails.actionCancel);
-      },
-      onTapUp: (TapUpDetails details) {
-        //_triggerDragEvent(IndexBarDragDetails.actionUp);
-      },
-      behavior: HitTestBehavior.translucent,
-      child: Column(
+        potentialHeight = data.length * 16;
+      }
+
+      List<Widget> children = List.generate(data.length, (index) {
+        Widget child = widget.itemBuilder == null
+            ? Center(child: Text('${data[index]}', style: widget.textStyle))
+            : widget.itemBuilder!(context, index);
+        return SizedBox(
+          width: widget.width,
+          height: widget.itemHeight,
+          child: child,
+        );
+      });
+
+      return Column(
         mainAxisSize: MainAxisSize.min,
         children: children,
-      ),
-    );
+      );
+    });
   }
 }
